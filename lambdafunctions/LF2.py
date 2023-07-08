@@ -23,14 +23,18 @@ def lambda_handler(event, context):
         
         # Extract the cuisine value from the message body
         cuisine = message_body['cuisine'] 
+        email = message_body['email'] 
+        peopleCount = message_body['peopleCount'] 
+        diningTime = message_body['diningTime'] 
+        date = message_body['date'] 
         
         #query elastic search connection
         es_host= 'search-restaurants-x5rqlzhfdeitt5ubcf4ay6uvhy.us-east-1.es.amazonaws.com'
         index_path = '/restaurant/_doc/1/' 
         region = 'us-east-1' 
         service = 'es'
-        access_key='AKIAWQP7TFG2SWTBWUV6'
-        secret_key='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'
+        access_key='AKIAWQP7TFG26FILF44I'
+        secret_key='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'
 
         
         auth = AWSRequestsAuth(aws_access_key=access_key,
@@ -40,13 +44,11 @@ def lambda_handler(event, context):
                               aws_service='es')
         
     
-        url = "https://search-restaurants-x5rqlzhfdeitt5ubcf4ay6uvhy.us-east-1.es.amazonaws.com"
+        url = "https://search-restaurants-x5rqlzhfdeitt5ubcf4ay6uvhy.us-east-1.es.amazonaws.com/restaurant/_search"
         
-        # test ES connection
-        response = requests.get(url, auth=auth)
-        return response.content
-        
-        url = f'https://{es_host}/restaurants/_search'
+        # # test ES connection
+        # response = requests.get(url, auth=auth)
+
         query = {
             "query": {
                 "match": {
@@ -59,7 +61,7 @@ def lambda_handler(event, context):
         }
         response = requests.post(url, auth=auth, headers=headers, json=query)
         hits = response.json()['hits']['hits']
-        business_ids = [hit['_source']['Business ID'] for hit in hits]
+        business_ids = [hit['_source']['restaurant-id'] for hit in hits]
 
         #query dynamoDB
         dynamodb = boto3.client('dynamodb')
@@ -70,8 +72,7 @@ def lambda_handler(event, context):
                 response = dynamodb.get_item(
                     TableName='yelp-restaurants',
                     Key={
-                        'Business ID': {'S': business_id},
-                        'cuisine' : {'S':cuisine}
+                        'business-id': {'S': business_id}
                     }
                 )
                 dbres.append(response['Item'])
@@ -82,18 +83,14 @@ def lambda_handler(event, context):
         restaurants = []
 
         for i, restaurant in enumerate(dbres):
-            email = restaurant['email']['S']
-            cuisine = restaurant['cuisine']['S']
-            location = restaurant['location']['S']
-            diningTime = restaurant['diningTime']['S']
-            peopleCount = restaurant['peopleCount']['N']
-            
+            name = restaurant['name']['S']
+            location = restaurant['address']['M']['display_address']['L']
+            address = ''
+            for i in range (len(location)):
+                address += location[i]['S']
             restaurant_info = {
-                'email': email,
-                'cuisine': cuisine,
-                'location': location,
-                'diningTime': diningTime,
-                'peopleCount': peopleCount,
+                'name': name,
+                'location': address
             }
             
             restaurants.append(restaurant_info)
@@ -113,7 +110,7 @@ def lambda_handler(event, context):
             response = ses.send_email(
                 Destination={
                     'ToAddresses': [
-                        'kf1685@nyu.edu',
+                        email,
                     ],
                 },
                 Message={
