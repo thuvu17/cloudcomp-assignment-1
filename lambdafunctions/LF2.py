@@ -95,14 +95,13 @@ def lambda_handler(event, context):
             
             restaurants.append(restaurant_info)
         
-        lines = []
+        lines = ["“Hello! Here are my {} restaurant suggestions for {} people, for {} at {}:\n ".format(cuisine, peopleCount, date, diningTime)]
         for i, item in enumerate(restaurants):
-            line = f"----------------------------\nRestaurant {i+1}\n----------------------------\n"
-            for key, value in item.items():
-                line += f"{key}: {value}\n"
+            line = "{}. {}, located at {}\n".format(i + 1, item['name'], item['location'])
             lines.append(line)
         
         email_content = "".join(lines)
+        return email_content
 
         # Use SES to send an email
         ses = boto3.client('ses')
