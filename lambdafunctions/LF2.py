@@ -101,7 +101,6 @@ def lambda_handler(event, context):
             lines.append(line)
         
         email_content = "".join(lines)
-        return email_content
 
         # Use SES to send an email
         ses = boto3.client('ses')
