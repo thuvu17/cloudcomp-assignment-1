@@ -33,15 +33,13 @@ def lambda_handler(event, context):
         index_path = '/restaurant/_doc/1/' 
         region = 'us-east-1' 
         service = 'es'
-        access_key='AKIAWQP7TFG26FILF44I'
-        secret_key='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'
+        credentials = boto3.Session().get_credentials()
 
-        
-        auth = AWSRequestsAuth(aws_access_key=access_key,
-                              aws_secret_access_key=secret_key,
-                              aws_host=es_host,
-                              aws_region='us-east-1',
-                              aws_service='es')
+        auth = AWSRequestsAuth(aws_access_key=credentials.access_key,
+                              aws_secret_access_key=credentials.secret_key,
+                              aws_host=host,
+                              aws_region=region,
+                              aws_service=service)
         
     
         url = "https://search-restaurants-x5rqlzhfdeitt5ubcf4ay6uvhy.us-east-1.es.amazonaws.com/restaurant/_search"
